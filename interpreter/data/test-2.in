@@ -1,0 +1,4 @@
+world 3x5
+put hero in (1,1)
+put pit in [i!=j/3+5, 3<i*0]
+put pit in (5,3)

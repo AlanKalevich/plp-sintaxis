@@ -12,12 +12,32 @@
 
 %token NL         // nueva línea
 %token CONSTANT   // constante
-
+%token WORLD   // world palabra reservda
+%token EQUIS   // equis palabra reservda
+%token PUT
+%token HERO
+%token IN
+%token PARENTESIS_ABRE
+%token COMA
+%token PARENTESIS_CIERRA
+%token CORCHETE_ABRE
+%token CORCHETE_CIERRA
+%token IGUAL
+%token GOLD
+%token PIT
+%token WUMPUS
+%token I
+%token J
+%token MAS
+%token MENOS
+%token MULTIPLICADO
+%token DIVIDIDO
+%token DISTINTO
 %%
 
 program
-  : statement_list            // Lista de sentencias
-  |                           // Programa vacio
+  : world_stmt statement_list
+  |
   ;
 
 statement_list
@@ -25,10 +45,59 @@ statement_list
   | statement statement_list // Sentencia,y lista
   ;
 
-statement
-  : CONSTANT NL {System.out.println("constante: "+ $1); $$ = $1;}
+world_stmt
+  : WORLD CONSTANT EQUIS CONSTANT NL {  world = WumpusWorld.crear((int)$2,(int)$4);  }
   ;
 
+statement
+  : put_stmt 
+  | NL
+  ;
+
+put_stmt 
+  : PUT elem IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {  world.agregarElemento( (ELEMENTO)$2 , new Celda((int)$5,(int)$7));  }
+  | PUT PIT IN CORCHETE_ABRE cond_list CORCHETE_CIERRA NL {}
+  | PUT PIT IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {}
+  ;
+
+elem 
+  : HERO { $$ = ELEMENTO.HERO; }
+  | GOLD { $$ = ELEMENTO.GOLD; }
+  | PIT { $$ = ELEMENTO.PIT; }
+  | WUMPUS { $$ = ELEMENTO.WUMPUS; }
+  ;
+  
+cond_list
+  : cond
+  | cond COMA cond_list
+  ;
+
+cond
+  : exp exp_arit exp
+  ;
+
+exp_arit : IGUAL | MAYOR | MENOR | MAYOR_IGUAL | MENOR_IGUAL | DISTINTO;
+
+coord : I | J;
+
+exp 
+  : exp op_princ term
+  | term
+  ;
+
+term 
+  : term op_sec factor
+  | factor
+  ;
+
+factor 
+  : CONSTANT
+  | coord
+  ;
+
+
+op_princ  : MAS           |   MENOS;
+op_sec    : MULTIPLICADO  |   DIVIDIDO;
 
 %%
 
@@ -43,7 +112,7 @@ statement
   public Parser(Reader r)
   {
      lexer = new Lexer(r, this);
-     world = new WumpusWorld();
+    // world = new WumpusWorld();
   }
 
   /** esta función se invoca por el analizador cuando necesita el
