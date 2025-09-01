@@ -17,7 +17,7 @@ public class WumpusWorld {
         return new WumpusWorld(filas, columnas);
     }
 
-    public WumpusWorld(int filas, int columnas) {
+    private WumpusWorld(int filas, int columnas) {
         this.filas = filas;
         this.columnas = columnas;
         celdasPit = new LinkedHashSet<>();  // <-- único y mantiene orden    
@@ -133,7 +133,7 @@ public class WumpusWorld {
     public void print() {
         System.out.println("\n-----------------------------------------\n");
 
-        System.out.println("world," + filas + "," + columnas);
+        System.out.println("world: " + filas + "," + columnas);
         System.out.println("wumpus: " + celdaWumpus.i + "," + celdaWumpus.j);
         System.out.println("gold: " + celdaGold.i + "," + celdaGold.j);
         System.out.println("hero: " + celdaHero.i + "," + celdaHero.j);
@@ -240,6 +240,7 @@ class Const implements Expr {
         this.v = v;
     }
 
+    @Override
     public int eval(int i, int j) {
         return v;
     }
@@ -247,6 +248,7 @@ class Const implements Expr {
 
 class VarI implements Expr {
 
+    @Override
     public int eval(int i, int j) {
         return i;
     }
@@ -254,6 +256,7 @@ class VarI implements Expr {
 
 class VarJ implements Expr {
 
+    @Override
     public int eval(int i, int j) {
         return j;
     }
@@ -268,6 +271,7 @@ class Add implements Expr {
         this.b = b;
     }
 
+    @Override
     public int eval(int i, int j) {
         return a.eval(i, j) + b.eval(i, j);
     }
@@ -282,6 +286,7 @@ class Sub implements Expr {
         this.b = b;
     }
 
+    @Override
     public int eval(int i, int j) {
         return a.eval(i, j) - b.eval(i, j);
     }
@@ -296,6 +301,7 @@ class Mul implements Expr {
         this.b = b;
     }
 
+    @Override
     public int eval(int i, int j) {
         return a.eval(i, j) * b.eval(i, j);
     }
@@ -310,8 +316,9 @@ class Div implements Expr {
         this.b = b;
     }
 
+    @Override
     public int eval(int i, int j) {
         int den = b.eval(i, j);
-        return den == 0 ? 0 : a.eval(i, j) / den; // división entera, evita /0
+        return den == 0 ? 0 : a.eval(i, j) / den; // evita x/0
     }
 }
