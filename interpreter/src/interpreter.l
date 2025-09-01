@@ -37,6 +37,11 @@ world
     return Parser.WORLD;
   }
 
+print
+  {
+    return Parser.PRINT;
+  }
+
 x
   {
     return Parser.EQUIS;

@@ -5,6 +5,7 @@
   import java.io.*;
   import java.util.List;
   import java.util.ArrayList;
+  import java.util.Set; 
 %}
 
 
@@ -33,11 +34,19 @@
 %token MULTIPLICADO
 %token DIVIDIDO
 %token DISTINTO
+%token MAYOR
+%token MENOR
+%token MAYOR_IGUAL
+%token MENOR_IGUAL
+%token PRINT
 %%
 
 program
-  : world_stmt statement_list
-  |
+  : world_stmt statement_list print_stmt
+  ;
+
+print_stmt
+  : PRINT WORLD NL { world.print(); }
   ;
 
 statement_list
@@ -56,8 +65,8 @@ statement
 
 put_stmt 
   : PUT elem IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {  world.agregarElemento( (ELEMENTO)$2 , new Celda((int)$5,(int)$7));  }
-  | PUT PIT IN CORCHETE_ABRE cond_list CORCHETE_CIERRA NL {}
-  | PUT PIT IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {}
+  | PUT PIT IN CORCHETE_ABRE cond_list CORCHETE_CIERRA NL { world.agregarPits( (Set<Celda>) $5 ); } 
+  | PUT PIT IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL { world.agregarElemento( ELEMENTO.PIT, new Celda((int)$5,(int)$7));  } 
   ;
 
 elem 
@@ -66,38 +75,59 @@ elem
   | PIT { $$ = ELEMENTO.PIT; }
   | WUMPUS { $$ = ELEMENTO.WUMPUS; }
   ;
-  
+
 cond_list
-  : cond
-  | cond COMA cond_list
+  : cond                     { $$ = $1; }
+  | cond COMA cond_list      { $$ = world.intersect( (Set<Celda>)$1, (Set<Celda>)$3 ); }
   ;
 
 cond
-  : exp exp_arit exp
+  : exp exp_arit exp         { $$ = world.evaluarExpresion( (Expr)$1, (EXP_ARIT)$2, (Expr)$3 ); }
   ;
 
-exp_arit : IGUAL | MAYOR | MENOR | MAYOR_IGUAL | MENOR_IGUAL | DISTINTO;
-
-coord : I | J;
+exp_arit 
+  : IGUAL { $$ = EXP_ARIT.IGUAL; }
+  | MAYOR { $$ = EXP_ARIT.MAYOR; }
+  | MENOR { $$ = EXP_ARIT.MENOR; }
+  | MAYOR_IGUAL { $$ = EXP_ARIT.MAYOR_IGUAL; }
+  | MENOR_IGUAL { $$ = EXP_ARIT.MENOR_IGUAL; }
+  | DISTINTO { $$ = EXP_ARIT.DISTINTO; }
+  ;
 
 exp 
-  : exp op_princ term
-  | term
+  : exp op_princ term   { char op = ((Character)$2).charValue();
+                          if (op == '+') $$ = new Add( (Expr)$1, (Expr)$3 );
+                          else           $$ = new Sub( (Expr)$1, (Expr)$3 );
+                        }
+  | term                { $$ = $1; }
   ;
 
 term 
-  : term op_sec factor
-  | factor
+  : term op_sec factor  { char op = ((Character)$2).charValue();
+                          if (op == '*') $$ = new Mul( (Expr)$1, (Expr)$3 );
+                          else           $$ = new Div( (Expr)$1, (Expr)$3 );
+                        }
+  | factor              { $$ = $1; }
   ;
 
 factor 
-  : CONSTANT
-  | coord
+  : CONSTANT            { $$ = new Const( ((Integer)$1).intValue() ); }
+  | coord               { $$ = $1; }
   ;
 
+coord
+  : I { $$ = new VarI(); }
+  | J { $$ = new VarJ(); }
+  ;
 
-op_princ  : MAS           |   MENOS;
-op_sec    : MULTIPLICADO  |   DIVIDIDO;
+op_princ  : MAS           { $$ = Character.valueOf('+'); }
+          | MENOS         { $$ = Character.valueOf('-'); }
+          ;
+
+op_sec    : MULTIPLICADO  { $$ = Character.valueOf('*'); }
+          | DIVIDIDO      { $$ = Character.valueOf('/'); }
+          ;
+
 
 %%
 

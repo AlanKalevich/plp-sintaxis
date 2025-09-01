@@ -1,4 +1,11 @@
-world 3x5
-put hero in (1,1)
-put pit in [i!=j/3+5, 3<i*0]
-put pit in (5,3)
+world 10x12;
+put hero in (2,2);
+put gold in (8,10);
+put wumpus in (6,8);
+put pit in [i=1];
+put pit in [i=10];
+put pit in [j=1];
+put pit in [j=12];
+put pit in [j=5, i<=6];
+put pit in [i=j+6];
+print world;

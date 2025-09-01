@@ -1,7 +1,8 @@
 package org.unp.plp.interprete;
 
-import java.util.ArrayList;
-import java.util.List; // G(old)
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class WumpusWorld {
 
@@ -10,61 +11,307 @@ public class WumpusWorld {
     private Celda celdaHero;
     private Celda celdaGold;
     private Celda celdaWumpus;
-    private List<Celda> celdasPit;
+    private Set<Celda> celdasPit;
 
     public static WumpusWorld crear(int filas, int columnas) {
-        System.out.println("Esto esta dentro de WumpusWorld " + filas + " " + columnas);
-
         return new WumpusWorld(filas, columnas);
     }
 
     public WumpusWorld(int filas, int columnas) {
         this.filas = filas;
         this.columnas = columnas;
-        celdasPit = new ArrayList<>();
+        celdasPit = new LinkedHashSet<>();  // <-- único y mantiene orden    
     }
 
     void agregarElemento(ELEMENTO elem, Celda celda) {
+        switch (elem) {
+            case HERO -> {
+                celdasPit.remove(celda);
 
-        if (elem == ELEMENTO.HERO) {
-            System.out.println("Agregando al heroe en la celda " + celda.i + ", " + celda.j);
-            this.celdaHero = celda;
+                System.out.println("Agregando al heroe en la celda " + celda.i + ", " + celda.j);
+                this.celdaHero = celda;
+            }
+            case GOLD -> {
+                celdasPit.remove(celda);
+
+                System.out.println("Agregando el oro en la celda " + celda.i + ", " + celda.j);
+                this.celdaGold = celda;
+            }
+            case WUMPUS -> {
+                celdasPit.remove(celda);
+
+                System.out.println("Agregando al Wumpus en la celda " + celda.i + ", " + celda.j);
+                this.celdaWumpus = celda;
+            }
+            case PIT -> {
+                // ignorar pits en celdas especiales
+                if (esCeldaEspecial(celda)) {
+                    return;
+                }
+                // LinkedHashSet evita duplicados; solo avisamos si se agregó
+                this.celdasPit.add(celda);
+
+            }
         }
-
-        if (elem == ELEMENTO.GOLD) {
-            System.out.println("Agregando el oro en la celda " + celda.i + ", " + celda.j);
-            this.celdaGold = celda;
-        }
-
-        if (elem == ELEMENTO.WUMPUS) {
-            System.out.println("Agregando al Wumpus en la celda " + celda.i + ", " + celda.j);
-            this.celdaWumpus = celda;
-        }
-
-        if (elem == ELEMENTO.PIT) {
-            System.out.println("Agregando un pozo en la celda " + celda.i + ", " + celda.j);
-            this.celdasPit.add(celda);
-        }
-
     }
 
-    void removerElemento(ELEMENTO elem, Celda celda) {
+    /**
+     * Evalúa (left <op> right) sobre TODAS las celdas y devuelve el conjunto de
+     * celdas que cumplen.
+     */
+    public Set<Celda> evaluarExpresion(Expr left, EXP_ARIT op, Expr right) {
+        Set<Celda> out = new HashSet<>();
+        for (int i = 1; i <= filas; i++) {
+            for (int j = 1; j <= columnas; j++) {
+                int a = left.eval(i, j);
+                int b = right.eval(i, j);
+                boolean ok = switch (op) {
+                    case IGUAL ->
+                        a == b;
+                    case MAYOR ->
+                        a > b;
+                    case MENOR ->
+                        a < b;
+                    case MAYOR_IGUAL ->
+                        a >= b;
+                    case MENOR_IGUAL ->
+                        a <= b;
+                    case DISTINTO ->
+                        a != b;
+                };
+                if (ok) {
+                    out.add(new Celda(i, j));
+                }
+            }
+        }
+        return out;
     }
 
-    void print() {
-        System.out.println("El mundillo");
+    /**
+     * Intersección de resultados de condiciones (la coma en [ cond , cond , ...
+     * ]).
+     */
+    public Set<Celda> intersect(Set<Celda> a, Set<Celda> b) {
+        Set<Celda> r = new HashSet<>(a);
+        r.retainAll(b);
+        return r;
     }
+
+    /**
+     * Agrega pits en todas las celdas del set.
+     */
+    public void agregarPits(Set<Celda> celdas) {
+        for (Celda c : celdas) {
+            agregarElemento(ELEMENTO.PIT, c);
+        }
+    }
+
+    private boolean esCeldaEspecial(Celda c) {
+        return (celdaHero != null && celdaHero.equals(c))
+                || (celdaGold != null && celdaGold.equals(c))
+                || (celdaWumpus != null && celdaWumpus.equals(c));
+    }
+
+    private boolean hayPit(int i, int j) {
+        // gracias a equals/hashCode en Celda, funciona el contains
+        return celdasPit.contains(new Celda(i, j));
+    }
+
+    private char simbolo(int i, int j) {
+        if (celdaHero != null && celdaHero.i == i && celdaHero.j == j) {
+            return 'H';
+        }
+        if (celdaGold != null && celdaGold.i == i && celdaGold.j == j) {
+            return 'G';
+        }
+        if (celdaWumpus != null && celdaWumpus.i == i && celdaWumpus.j == j) {
+            return 'W';
+        }
+        return hayPit(i, j) ? 'P' : '.';
+    }
+
+    public void print() {
+        System.out.println("\n-----------------------------------------\n");
+
+        System.out.println("world," + filas + "," + columnas);
+        System.out.println("wumpus: " + celdaWumpus.i + "," + celdaWumpus.j);
+        System.out.println("gold: " + celdaGold.i + "," + celdaGold.j);
+        System.out.println("hero: " + celdaHero.i + "," + celdaHero.j);
+
+        System.out.print("PITS = ");
+        for (Celda c : celdasPit) {
+            System.out.print("[" + c.i + "," + c.j + "]");
+        }
+        System.out.println("\n\n-----------------------------------------\n");
+
+        printAscii();
+    }
+
+    private void printAscii() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n=== Wumpus World ").append(filas).append("x").append(columnas).append(" ===\n");
+
+        // Encabezado de columnas
+        sb.append("    "); // margen para números de fila
+        for (int j = 1; j <= columnas; j++) {
+            sb.append(String.format(" %2d", j));
+        }
+        sb.append("\n");
+
+        // Separador
+        sb.append("   +");
+        for (int j = 1; j <= columnas; j++) {
+            sb.append("---");
+        }
+        sb.append("+\n");
+
+        // Filas
+        for (int i = 1; i <= filas; i++) {
+            sb.append(String.format("%2d |", i));
+            for (int j = 1; j <= columnas; j++) {
+                sb.append(' ').append(simbolo(i, j)).append(' ');
+            }
+            sb.append("|\n");
+        }
+
+        // Separador inferior
+        sb.append("   +");
+        for (int j = 1; j <= columnas; j++) {
+            sb.append("---");
+        }
+        sb.append("+\n");
+
+        // Leyenda
+        sb.append("Leyenda: H=Hero G=Gold W=Wumpus P=Pit .=Vacío\n");
+
+        System.out.print(sb.toString());
+    }
+
 }
 
-enum ELEMENTO { PIT, GOLD, WUMPUS, HERO }
+enum ELEMENTO {
+    PIT, GOLD, WUMPUS, HERO
+}
+
+enum EXP_ARIT {
+    IGUAL, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL, DISTINTO
+}
 
 class Celda {
+
+    public int i;
+    public int j;
 
     public Celda(int i, int j) {
         this.i = i;
         this.j = j;
     }
 
-    public int i;
-    public int j;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Celda c)) {
+            return false;
+        }
+        return i == c.i && j == c.j;
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(i, j);
+    }
+}
+
+/**
+ * AST mínimo para expresiones aritméticas sobre i, j e enteros.
+ */
+interface Expr {
+
+    int eval(int i, int j);
+}
+
+class Const implements Expr {
+
+    final int v;
+
+    Const(int v) {
+        this.v = v;
+    }
+
+    public int eval(int i, int j) {
+        return v;
+    }
+}
+
+class VarI implements Expr {
+
+    public int eval(int i, int j) {
+        return i;
+    }
+}
+
+class VarJ implements Expr {
+
+    public int eval(int i, int j) {
+        return j;
+    }
+}
+
+class Add implements Expr {
+
+    final Expr a, b;
+
+    Add(Expr a, Expr b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    public int eval(int i, int j) {
+        return a.eval(i, j) + b.eval(i, j);
+    }
+}
+
+class Sub implements Expr {
+
+    final Expr a, b;
+
+    Sub(Expr a, Expr b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    public int eval(int i, int j) {
+        return a.eval(i, j) - b.eval(i, j);
+    }
+}
+
+class Mul implements Expr {
+
+    final Expr a, b;
+
+    Mul(Expr a, Expr b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    public int eval(int i, int j) {
+        return a.eval(i, j) * b.eval(i, j);
+    }
+}
+
+class Div implements Expr {
+
+    final Expr a, b;
+
+    Div(Expr a, Expr b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    public int eval(int i, int j) {
+        int den = b.eval(i, j);
+        return den == 0 ? 0 : a.eval(i, j) / den; // división entera, evita /0
+    }
 }
