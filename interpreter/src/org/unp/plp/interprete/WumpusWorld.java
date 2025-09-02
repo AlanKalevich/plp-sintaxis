@@ -42,7 +42,6 @@ public class WumpusWorld {
                 if (esCeldaEspecial(celda)) {
                     return;
                 }
-                // LinkedHashSet evita duplicados; solo avisamos si se agregó
                 this.celdasPit.add(celda);
 
             }
@@ -52,28 +51,21 @@ public class WumpusWorld {
     public void removerElemento(ELEMENTO elem, Celda celda) {
         switch (elem) {
             case PIT -> {
-                if (celdasPit.remove(celda)) {
-                    System.out.println("Removiendo pozo en " + celda.i + "," + celda.j);
-                } else {
-                    System.out.println("No había pozo en " + celda.i + "," + celda.j);
-                }
+                celdasPit.remove(celda);
             }
             case HERO -> {
                 if (celdaHero != null && celdaHero.equals(celda)) {
                     celdaHero = null;
-                    System.out.println("Removiendo hero en " + celda.i + "," + celda.j);
                 }
             }
             case GOLD -> {
                 if (celdaGold != null && celdaGold.equals(celda)) {
                     celdaGold = null;
-                    System.out.println("Removiendo gold en " + celda.i + "," + celda.j);
                 }
             }
             case WUMPUS -> {
                 if (celdaWumpus != null && celdaWumpus.equals(celda)) {
                     celdaWumpus = null;
-                    System.out.println("Removiendo wumpus en " + celda.i + "," + celda.j);
                 }
             }
         }
