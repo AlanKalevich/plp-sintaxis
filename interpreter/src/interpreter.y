@@ -39,6 +39,7 @@
 %token MAYOR_IGUAL
 %token MENOR_IGUAL
 %token PRINT
+%token REM
 %%
 
 program
@@ -60,6 +61,7 @@ world_stmt
 
 statement
   : put_stmt 
+  | rem_stmt
   | NL
   ;
 
@@ -67,6 +69,12 @@ put_stmt
   : PUT elem IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {  world.agregarElemento( (ELEMENTO)$2 , new Celda((int)$5,(int)$7));  }
   | PUT PIT IN CORCHETE_ABRE cond_list CORCHETE_CIERRA NL { world.agregarPits( (Set<Celda>) $5 ); } 
   | PUT PIT IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL { world.agregarElemento( ELEMENTO.PIT, new Celda((int)$5,(int)$7));  } 
+  ;
+
+rem_stmt
+  : REM elem IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL {  world.removerElemento( (ELEMENTO)$2 , new Celda((int)$5,(int)$7));  }
+  | REM PIT IN CORCHETE_ABRE cond_list CORCHETE_CIERRA NL { world.removerPits( (Set<Celda>) $5 ); }
+  | REM PIT IN PARENTESIS_ABRE CONSTANT COMA CONSTANT PARENTESIS_CIERRA NL { world.removerElemento(ELEMENTO.PIT, new Celda((int)$5,(int)$7)); }
   ;
 
 elem 
@@ -94,20 +102,14 @@ exp_arit
   | DISTINTO { $$ = EXP_ARIT.DISTINTO; }
   ;
 
-exp 
-  : exp op_princ term   { char op = ((Character)$2).charValue();
-                          if (op == '+') $$ = new Add( (Expr)$1, (Expr)$3 );
-                          else           $$ = new Sub( (Expr)$1, (Expr)$3 );
-                        }
-  | term                { $$ = $1; }
+exp
+  : exp  op_princ term   { $$ = ((BinOp)$2).apply((Expr)$1, (Expr)$3); }
+  | term                 { $$ = $1; }
   ;
 
-term 
-  : term op_sec factor  { char op = ((Character)$2).charValue();
-                          if (op == '*') $$ = new Mul( (Expr)$1, (Expr)$3 );
-                          else           $$ = new Div( (Expr)$1, (Expr)$3 );
-                        }
-  | factor              { $$ = $1; }
+term
+  : term op_sec   factor { $$ = ((BinOp)$2).apply((Expr)$1, (Expr)$3); }
+  | factor               { $$ = $1; }
   ;
 
 factor 
@@ -120,13 +122,15 @@ coord
   | J { $$ = new VarJ(); }
   ;
 
-op_princ  : MAS           { $$ = Character.valueOf('+'); }
-          | MENOS         { $$ = Character.valueOf('-'); }
-          ;
+op_princ  
+  : MAS           { $$ = new AddOp(); }
+  | MENOS         { $$ = new SubOp(); }
+  ;
 
-op_sec    : MULTIPLICADO  { $$ = Character.valueOf('*'); }
-          | DIVIDIDO      { $$ = Character.valueOf('/'); }
-          ;
+op_sec
+  : MULTIPLICADO  { $$ = new MulOp(); }
+  | DIVIDIDO      { $$ = new DivOp(); }
+  ;
 
 
 %%

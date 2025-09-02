@@ -7,5 +7,7 @@ put pit in [i=10]
 put pit in [j=1]
 put pit in [j=12]
 put pit in [j=5, i<=6]
-put pit in [i=j+7]
+put pit in [i=2*j+1*2-4/3]
+rem pit in [j=12]
 print world
+    

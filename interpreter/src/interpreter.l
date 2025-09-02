@@ -42,6 +42,11 @@ print
     return Parser.PRINT;
   }
 
+rem
+  {
+    return Parser.REM;
+  }
+
 x
   {
     return Parser.EQUIS;

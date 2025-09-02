@@ -27,20 +27,14 @@ public class WumpusWorld {
         switch (elem) {
             case HERO -> {
                 celdasPit.remove(celda);
-
-                System.out.println("Agregando al heroe en la celda " + celda.i + ", " + celda.j);
                 this.celdaHero = celda;
             }
             case GOLD -> {
                 celdasPit.remove(celda);
-
-                System.out.println("Agregando el oro en la celda " + celda.i + ", " + celda.j);
                 this.celdaGold = celda;
             }
             case WUMPUS -> {
                 celdasPit.remove(celda);
-
-                System.out.println("Agregando al Wumpus en la celda " + celda.i + ", " + celda.j);
                 this.celdaWumpus = celda;
             }
             case PIT -> {
@@ -52,6 +46,42 @@ public class WumpusWorld {
                 this.celdasPit.add(celda);
 
             }
+        }
+    }
+
+    public void removerElemento(ELEMENTO elem, Celda celda) {
+        switch (elem) {
+            case PIT -> {
+                if (celdasPit.remove(celda)) {
+                    System.out.println("Removiendo pozo en " + celda.i + "," + celda.j);
+                } else {
+                    System.out.println("No había pozo en " + celda.i + "," + celda.j);
+                }
+            }
+            case HERO -> {
+                if (celdaHero != null && celdaHero.equals(celda)) {
+                    celdaHero = null;
+                    System.out.println("Removiendo hero en " + celda.i + "," + celda.j);
+                }
+            }
+            case GOLD -> {
+                if (celdaGold != null && celdaGold.equals(celda)) {
+                    celdaGold = null;
+                    System.out.println("Removiendo gold en " + celda.i + "," + celda.j);
+                }
+            }
+            case WUMPUS -> {
+                if (celdaWumpus != null && celdaWumpus.equals(celda)) {
+                    celdaWumpus = null;
+                    System.out.println("Removiendo wumpus en " + celda.i + "," + celda.j);
+                }
+            }
+        }
+    }
+
+    public void removerPits(Set<Celda> celdas) {
+        for (Celda c : celdas) {
+            removerElemento(ELEMENTO.PIT, c);
         }
     }
 
@@ -133,15 +163,21 @@ public class WumpusWorld {
     public void print() {
         System.out.println("\n-----------------------------------------\n");
 
-        System.out.println("world: " + filas + "," + columnas);
-        System.out.println("wumpus: " + celdaWumpus.i + "," + celdaWumpus.j);
-        System.out.println("gold: " + celdaGold.i + "," + celdaGold.j);
-        System.out.println("hero: " + celdaHero.i + "," + celdaHero.j);
-
-        System.out.print("PITS = ");
-        for (Celda c : celdasPit) {
-            System.out.print("[" + c.i + "," + c.j + "]");
+        // CSV "estricto"
+        System.out.println("world," + filas + "," + columnas);
+        if (celdaWumpus != null) {
+            System.out.println("wumpus," + celdaWumpus.i + "," + celdaWumpus.j);
         }
+        if (celdaGold != null) {
+            System.out.println("gold," + celdaGold.i + "," + celdaGold.j);
+        }
+        if (celdaHero != null) {
+            System.out.println("hero," + celdaHero.i + "," + celdaHero.j);
+        }
+        for (Celda c : celdasPit) {
+            System.out.println("pit," + c.i + "," + c.j);
+        }
+
         System.out.println("\n\n-----------------------------------------\n");
 
         printAscii();
@@ -195,130 +231,4 @@ enum ELEMENTO {
 
 enum EXP_ARIT {
     IGUAL, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL, DISTINTO
-}
-
-class Celda {
-
-    public int i;
-    public int j;
-
-    public Celda(int i, int j) {
-        this.i = i;
-        this.j = j;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Celda c)) {
-            return false;
-        }
-        return i == c.i && j == c.j;
-    }
-
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(i, j);
-    }
-}
-
-/**
- * AST mínimo para expresiones aritméticas sobre i, j e enteros.
- */
-interface Expr {
-
-    int eval(int i, int j);
-}
-
-class Const implements Expr {
-
-    final int v;
-
-    Const(int v) {
-        this.v = v;
-    }
-
-    @Override
-    public int eval(int i, int j) {
-        return v;
-    }
-}
-
-class VarI implements Expr {
-
-    @Override
-    public int eval(int i, int j) {
-        return i;
-    }
-}
-
-class VarJ implements Expr {
-
-    @Override
-    public int eval(int i, int j) {
-        return j;
-    }
-}
-
-class Add implements Expr {
-
-    final Expr a, b;
-
-    Add(Expr a, Expr b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    public int eval(int i, int j) {
-        return a.eval(i, j) + b.eval(i, j);
-    }
-}
-
-class Sub implements Expr {
-
-    final Expr a, b;
-
-    Sub(Expr a, Expr b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    public int eval(int i, int j) {
-        return a.eval(i, j) - b.eval(i, j);
-    }
-}
-
-class Mul implements Expr {
-
-    final Expr a, b;
-
-    Mul(Expr a, Expr b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    public int eval(int i, int j) {
-        return a.eval(i, j) * b.eval(i, j);
-    }
-}
-
-class Div implements Expr {
-
-    final Expr a, b;
-
-    Div(Expr a, Expr b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    public int eval(int i, int j) {
-        int den = b.eval(i, j);
-        return den == 0 ? 0 : a.eval(i, j) / den; // evita x/0
-    }
 }
